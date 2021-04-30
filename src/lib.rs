@@ -136,6 +136,10 @@ fn parse_input(world: &mut World) {
                     find_archetypes_by_component_id(a, component_id);
                 }
 
+                if let Some(component_name) = matches.value_of("componentname") {
+                    find_archetypes_by_component_name(a, c, component_name);
+                }
+
                 if let Ok(entity_id) = matches.value_of_t("entityid") {
                     find_archetypes_by_entity_id(a, entity_id);
                 }
@@ -216,7 +220,11 @@ fn list_resources(archetypes: &Archetypes, components: &Components) {
     r.iter().for_each(|name| println!("{}", name));
 }
 
-fn list_components(components: &Components, short: bool, filter: Option<&str>) {
+fn get_components_by_name(
+    components: &Components,
+    short: bool,
+    filter: Option<&str>,
+) -> Vec<(usize, String)> {
     let mut names = Vec::new();
     for id in 1..components.len() {
         if let Some(info) = components.get_info(ComponentId::new(id)) {
@@ -228,7 +236,7 @@ fn list_components(components: &Components, short: bool, filter: Option<&str>) {
         }
     }
 
-    let mut names = if let Some(filter) = filter {
+    if let Some(filter) = filter {
         names
             .iter()
             .cloned()
@@ -236,7 +244,11 @@ fn list_components(components: &Components, short: bool, filter: Option<&str>) {
             .collect()
     } else {
         names
-    };
+    }
+}
+
+fn list_components(c: &Components, short: bool, filter: Option<&str>) {
+    let mut names = get_components_by_name(c, short, filter);
 
     names.sort();
     names
@@ -271,14 +283,39 @@ fn print_ecs_counts(a: &Archetypes, c: &Components, e: &Entities) {
     );
 }
 
+fn find_archetypes_by_component_name(a: &Archetypes, c: &Components, component_name: &str) {
+    let components = get_components_by_name(c, false, Some(component_name));
+
+    if components.len() == 0 {
+        println!("No component found with name {}", component_name);
+        return;
+    }
+
+    if components.len() > 1 {
+        println!("More than one component found with name {}", component_name);
+        println!("Consider searching with '--componentid' instead");
+        println!("");
+        println!("[component id] [component name]");
+        components
+            .iter()
+            .for_each(|(id, name)| println!("{} {}", id, name));
+        return;
+    }
+
+    if let Some(id_name) = components.iter().next() {
+        find_archetypes_by_component_id(a, id_name.0);
+    };
+}
+
 fn find_archetypes_by_component_id(a: &Archetypes, component_id: usize) {
     let archetypes = a
         .iter()
         .filter(|archetype| archetype.components().any(|c| c.index() == component_id))
         .map(|archetype| archetype.id().index());
 
-    println!("found archetype ids:");
-    archetypes.for_each(|id| println!("{}", id));
+    println!("archetype ids:");
+    archetypes.for_each(|id| print!("{}, ", id));
+    println!();
 }
 
 fn find_archetypes_by_entity_id(a: &Archetypes, entity_id: u32) {
@@ -287,7 +324,7 @@ fn find_archetypes_by_entity_id(a: &Archetypes, entity_id: u32) {
         .filter(|archetype| archetype.entities().iter().any(|e| e.id() == entity_id))
         .map(|archetype| archetype.id().index());
 
-    println!("found archetype ids:");
+    println!("archetype ids:");
     archetypes.for_each(|id| println!("{}", id));
 }
 
