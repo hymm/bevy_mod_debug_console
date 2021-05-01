@@ -4,8 +4,10 @@ use bevy::{
         component::{ComponentId, Components, StorageType},
         entity::Entities,
     },
+    prelude::World,
     reflect::TypeRegistration,
 };
+use clap::{App, AppSettings, ArgGroup, ArgMatches};
 
 pub fn list_resources(archetypes: &Archetypes, components: &Components) {
     let mut r: Vec<String> = archetypes
@@ -203,5 +205,145 @@ pub fn print_component(c: &Components, component_id: usize) {
         println!("SendAndSync: {}", info.is_send_and_sync());
     } else {
         println!("No component found with id: {}", component_id);
+    }
+}
+
+pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
+    let app = app.subcommand(
+            App::new("counts").about("print counts of archetypes, components, and entities"),
+        )
+        .subcommand(
+            App::new("archetypes")
+                .about("get archetypes info")
+                .alias("archetype")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(App::new("list")
+                    .about("list all archetypes")
+                )
+                .subcommand(App::new("info")
+                    .about("get info of one archetype")
+                    .arg("--id [Id] 'id to get'")
+                    .group(ArgGroup::new("search params")
+                        .args(&["id"])
+                        .required(true)
+                    )
+                )
+                .subcommand(App::new("find")
+                    .about("find a archetype")
+                    .arg("--componentid   [ComponentId]   'find types that have components with ComponentId'")
+                    .arg("--componentname [ComponentName] 'find types that have components with ComponentName'")
+                    .arg("--entityid      [EntityId]      'find types that have entities with EntityId")
+                    .group(ArgGroup::new("search params")
+                        .args(&["componentid", "componentname", "entityid"])
+                        .required(true)
+                    )
+                )
+        )
+        .subcommand(
+            App::new("components")
+                .about("get components info")
+                .alias("component")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(App::new("list")
+                    .about("list all components")
+                    .arg("-f, --filter [Filter] 'filter list'")
+                    .arg("-l, --long 'display long name'"),
+                )
+                .subcommand(App::new("info")
+                    .about("get info of one component")
+                    .arg("--id   [Id]   'id to get'")
+                    .arg("--name [Name] 'name to get'")
+                    .group(ArgGroup::new("search params")
+                        .args(&["id", "name"])
+                        .required(true)
+                    )
+                )
+        )
+        .subcommand(
+            App::new("entities")
+                .about("get entity info")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    App::new("list")
+                        .about("list all entities")
+                )
+                .subcommand(
+                    App::new("find")
+                        .about("find entity matching search params")
+                        .arg("--componentid   [ComponentId]   'find types that have components with ComponentId'")
+                        .arg("--componentname [ComponentName] 'find types that have components with ComponentName'")
+                        .group(ArgGroup::new("search params")
+                            .args(&["componentid", "componentname"])
+                            .required(true)
+                        )
+                )
+        )
+        .subcommand(
+            App::new("resources")
+                .about("get resource info")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    App::new("list")
+                        .about("list all resources")
+                )
+        );
+
+    app
+}
+
+pub fn match_commands(matches: &ArgMatches, world: &mut World) {
+    let a = world.archetypes();
+    let c = world.components();
+    let e = world.entities();
+    
+    match matches.subcommand() {
+        Some(("archetypes", matches)) => match matches.subcommand() {
+            Some(("list", _)) => list_archetypes(a),
+            Some(("find", matches)) => {
+                if let Ok(component_id) = matches.value_of_t("componentid") {
+                    find_archetypes_by_component_id(a, component_id);
+                }
+
+                if let Some(component_name) = matches.value_of("componentname") {
+                    find_archetypes_by_component_name(a, c, component_name);
+                }
+
+                if let Ok(entity_id) = matches.value_of_t("entityid") {
+                    find_archetypes_by_entity_id(a, entity_id);
+                }
+            }
+            Some(("info", matches)) => {
+                if let Ok(id) = matches.value_of_t("id") {
+                    print_archetype(a, c, ArchetypeId::new(id));
+                }
+            }
+            _ => {}
+        },
+        Some(("components", matches)) => match matches.subcommand() {
+            Some(("list", matches)) => {
+                list_components(c, !matches.is_present("long"), matches.value_of("filter"))
+            }
+            Some(("info", matches)) => {
+                if let Ok(id) = matches.value_of_t("id") {
+                    print_component(c, id);
+                }
+            }
+            _ => {}
+        },
+        Some(("entities", matches)) => match matches.subcommand() {
+            Some(("list", _)) => list_entities(e),
+            Some(("find", matches)) => {
+                if let Ok(component_id) = matches.value_of_t("componentid") {
+                    find_entities_by_component_id(a, component_id);
+                }
+            }
+            _ => {}
+        },
+        Some(("resources", matches)) => match matches.subcommand() {
+            Some(("list", _)) => list_resources(a, c),
+            _ => {}
+        },
+        Some(("counts", _)) => print_ecs_counts(a, c, e),
+        _ => {}
     }
 }

@@ -59,11 +59,12 @@ Once your bevy application is running press `F10` to activate the console.  Your
 
 The system that reads commands has a run criteria that returns `YesAndCheckAgain` until the `resume` command is entered.
 
-**Warning** This can have adverse affects with physics as the tick is paused and the tick time on resume can then be very large.
+**Warning** This can have adverse affects with physics as the tick is paused and the time delta on resume can then be very large.
 
 ## Future Work
 
 * Make it so commands can be run without pausing the tick
 * Add RenderGraph information
 * Add System and Schedule information
+* Add Reflection information
 
