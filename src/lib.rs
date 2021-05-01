@@ -1,9 +1,6 @@
 mod ecs;
 
-use bevy::{
-    ecs::schedule::ShouldRun,
-    prelude::*,
-};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use clap::{App, ArgMatches};
 use std::io::{self, BufRead, Write};
 use std::process::exit;
@@ -35,9 +32,9 @@ fn parse_input(world: &mut World) {
 
     let matches = matches_result.unwrap();
 
-    match_commands(&matches, world);
+    let output = match_commands(&matches, world);
 
-    println!("");
+    println!("{}", output);
 }
 
 fn build_app<'a>(app_name: &'a str) -> App {
@@ -49,9 +46,13 @@ fn build_app<'a>(app_name: &'a str) -> App {
     app
 }
 
-fn match_commands(matches: &ArgMatches, world: &mut World) {    
-    match_app_commands(matches, world);
-    ecs::match_commands(matches, world);
+fn match_commands(matches: &ArgMatches, world: &mut World) -> String {
+    let mut output = String::new();
+
+    output.push_str(&match_app_commands(matches, world));
+    output.push_str(&ecs::match_commands(matches, world));
+
+    output
 }
 struct EnteringConsole(bool);
 fn pause(
@@ -75,22 +76,26 @@ fn input_pause(keyboard_input: Res<Input<KeyCode>>, mut pause: ResMut<Pause>) {
 }
 
 fn build_app_commands(app: App) -> App {
-    let app = app.subcommand(App::new("resume").about("resume running game"))
+    let app = app
+        .subcommand(App::new("resume").about("resume running game"))
         .subcommand(App::new("quit").about("quit game"));
 
     app
 }
 
-fn match_app_commands(matches: &ArgMatches, world: &mut World) {
+fn match_app_commands(matches: &ArgMatches, world: &mut World) -> String {
+    let mut output = String::new();
     match matches.subcommand() {
         Some(("resume", _)) => {
             let mut pause = world.get_resource_mut::<Pause>().unwrap();
             pause.0 = false;
-            println!("...resuming game.")
+            output.push_str("...resuming game.");
         }
         Some(("quit", _)) => exit(0),
         _ => {}
     }
+
+    output
 }
 
 pub struct ConsoleDebugPlugin;
