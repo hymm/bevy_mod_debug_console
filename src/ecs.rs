@@ -2,9 +2,8 @@ use bevy::{
     ecs::{
         archetype::{ArchetypeId, Archetypes},
         component::{ComponentId, Components, StorageType},
-        entity::Entities,
+        entity::{Entities, Entity},
     },
-    prelude::World,
     reflect::TypeRegistration,
 };
 use clap::{App, AppSettings, ArgGroup, ArgMatches};
@@ -171,16 +170,38 @@ fn find_archetypes_by_entity_id(a: &Archetypes, entity_id: u32) -> String {
 }
 
 fn find_entities_by_component_id(a: &Archetypes, component_id: usize) -> String {
-    let mut output = String::new();
-
-    let entities = a
+    let entities: Vec<&Entity> = a
         .iter()
         .filter(|archetype| archetype.components().any(|c| c.index() == component_id))
         .map(|archetype| archetype.entities())
-        .flatten();
+        .flatten()
+        .collect();
 
+    if entities.iter().len() == 0 {
+        let mut output = String::new();
+        output.push_str("no entites found\n");
+        return output;
+    }
+
+    let mut output = String::new();
     output.push_str(&format!("entity ids:\n"));
-    entities.for_each(|id| output.push_str(&format!("{}, ", id.id())));
+    entities
+        .iter()
+        .for_each(|id| output.push_str(&format!("{}, ", id.id())));
+    output.push_str("\n");
+
+    output
+}
+
+fn find_entities_by_component_name(a: &Archetypes, c: &Components, component_name: &str) -> String {
+    let components = get_components_by_name(c, false, Some(component_name));
+
+    let mut output = String::new();
+    components.iter().for_each(|(id, name)| {
+        output.push_str(&format!("{}\n", name));
+        output.push_str(&find_entities_by_component_id(a, *id));
+        output.push_str("\n");
+    });
 
     output
 }
@@ -354,11 +375,12 @@ pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
     app
 }
 
-pub fn match_commands(matches: &ArgMatches, world: &mut World) -> String {
-    let a = world.archetypes();
-    let c = world.components();
-    let e = world.entities();
-
+pub fn match_commands(
+    matches: &ArgMatches,
+    a: &Archetypes,
+    c: &Components,
+    e: &Entities,
+) -> String {
     match matches.subcommand() {
         Some(("archetypes", matches)) => match matches.subcommand() {
             Some(("list", _)) => list_archetypes(a),
@@ -371,17 +393,17 @@ pub fn match_commands(matches: &ArgMatches, world: &mut World) -> String {
                     find_archetypes_by_entity_id(a, entity_id)
                 } else {
                     // should never be hit as clap checks this
-                    String::from("unsupported args")
+                    String::from("this line should not be hittable")
                 }
             }
             Some(("info", matches)) => {
                 if let Ok(id) = matches.value_of_t("id") {
                     print_archetype(a, c, ArchetypeId::new(id))
                 } else {
-                    String::from("unsupported args")
+                    String::from("this line should not be hittable")
                 }
             }
-            _ => String::from("unsuppored subcommands"),
+            _ => String::from("this line should not be hittable"),
         },
         Some(("components", matches)) => match matches.subcommand() {
             Some(("list", matches)) => {
@@ -393,27 +415,29 @@ pub fn match_commands(matches: &ArgMatches, world: &mut World) -> String {
                 } else if let Some(name) = matches.value_of("name") {
                     print_component_by_name(c, name)
                 } else {
-                    String::from("unsupported args")
+                    String::from("this line should not be hittable")
                 }
             }
-            _ => String::from("unsupported subcommand"),
+            _ => String::from("this line should not be hittable"),
         },
         Some(("entities", matches)) => match matches.subcommand() {
             Some(("list", _)) => list_entities(e),
             Some(("find", matches)) => {
                 if let Ok(component_id) = matches.value_of_t("componentid") {
                     find_entities_by_component_id(a, component_id)
+                } else if let Some(component_name) = matches.value_of("componentname") {
+                    find_entities_by_component_name(a, c, component_name)
                 } else {
-                    String::from("unsupported args")
+                    String::from("this line should not be hittable")
                 }
             }
-            _ => String::from("unsupported command"),
+            _ => String::from("this line should not be hittable"),
         },
         Some(("resources", matches)) => match matches.subcommand() {
             Some(("list", _)) => list_resources(a, c),
-            _ => String::from("unsupported args"),
+            _ => String::from("this line should not be hittable"),
         },
         Some(("counts", _)) => print_ecs_counts(a, c, e),
-        _ => String::from("unsupported command"),
+        _ => String::from(""),
     }
 }
