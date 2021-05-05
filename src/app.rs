@@ -1,7 +1,9 @@
 use crate::ecs;
+use crate::reflect;
 use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities, schedule::ShouldRun},
     prelude::{Input, KeyCode, Local, Res, ResMut},
+    reflect::TypeRegistry,
 };
 use clap::{App, ArgMatches};
 use std::process::exit;
@@ -11,6 +13,7 @@ pub fn build_commands<'a>(app_name: &'a str) -> App {
 
     let app = build_app_commands(app);
     let app = ecs::build_commands(app);
+    let app = reflect::build_commands(app);
 
     app
 }
@@ -21,11 +24,13 @@ pub fn match_commands(
     c: &Components,
     e: &Entities,
     pause: &mut Pause,
+    reflect: &TypeRegistry,
 ) -> String {
     let mut output = String::new();
 
     output.push_str(&match_app_commands(matches, pause));
     output.push_str(&ecs::match_commands(matches, a, c, e));
+    output.push_str(&reflect::match_commands(matches, reflect));
 
     output
 }

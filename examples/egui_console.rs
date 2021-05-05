@@ -1,6 +1,9 @@
-use bevy::ecs::{archetype::Archetypes, component::Components, entity::Entities};
 use bevy::prelude::*;
-use bevy_console::{ConsoleCommandEntered, ConsolePlugin, PrintConsoleLine, ConsoleConfiguration};
+use bevy::{
+    ecs::{archetype::Archetypes, component::Components, entity::Entities},
+    reflect::TypeRegistry,
+};
+use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin, PrintConsoleLine};
 use bevy_mod_debug_console::{build_commands, match_commands, Pause};
 
 fn debug_console(
@@ -10,6 +13,7 @@ fn debug_console(
     c: &Components,
     e: &Entities,
     mut pause: ResMut<Pause>,
+    reflect: Res<TypeRegistry>,
 ) {
     let app_name = "";
     for event in console_events.iter() {
@@ -25,7 +29,7 @@ fn debug_console(
             return;
         }
 
-        let output = match_commands(&matches_result.unwrap(), a, c, e, &mut pause);
+        let output = match_commands(&matches_result.unwrap(), a, c, e, &mut pause, &*reflect);
 
         console_line.send(PrintConsoleLine::new(output));
     }

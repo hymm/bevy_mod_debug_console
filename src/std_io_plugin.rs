@@ -2,6 +2,7 @@ use crate::app::{build_commands, input_pause, match_commands, pause, EnteringCon
 use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities},
     prelude::*,
+    reflect::TypeRegistry,
 };
 use std::io::{self, BufRead, Write};
 
@@ -9,6 +10,7 @@ fn parse_input(
     a: &Archetypes,
     c: &Components,
     e: &Entities,
+    reflect: Res<TypeRegistry>,
     entering_console: Res<EnteringConsole>,
     mut pause: ResMut<Pause>,
 ) {
@@ -35,7 +37,7 @@ fn parse_input(
 
     let matches = matches_result.unwrap();
 
-    let output = match_commands(&matches, a, c, e, &mut pause);
+    let output = match_commands(&matches, a, c, e, &mut pause, &*reflect);
 
     println!("{}", output);
 }

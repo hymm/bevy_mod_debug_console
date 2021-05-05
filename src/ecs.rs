@@ -98,7 +98,7 @@ fn list_archetypes(a: &Archetypes) -> String {
 
 fn print_ecs_counts(a: &Archetypes, c: &Components, e: &Entities) -> String {
     String::from(format!(
-        "entities {}, components: {}, archetypes {}\n",
+        "entities: {}, components: {}, archetypes: {}\n",
         e.len(),
         c.len(),
         a.len()
