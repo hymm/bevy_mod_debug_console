@@ -155,16 +155,24 @@ fn find_archetypes_by_component_id(a: &Archetypes, component_id: usize) -> Strin
     output
 }
 
-fn find_archetypes_by_entity_id(a: &Archetypes, entity_id: u32) -> String {
-    let mut output = String::new();
-
-    let archetypes = a
+pub fn get_archetype_id_by_entity_id(a: &Archetypes, entity_id: u32) -> Option<usize> {
+    let mut archetypes = a
         .iter()
         .filter(|archetype| archetype.entities().iter().any(|e| e.id() == entity_id))
         .map(|archetype| archetype.id().index());
 
-    output.push_str(&format!("archetype ids:\n"));
-    archetypes.for_each(|id| output.push_str(&format!("{}", id)));
+    archetypes.next()
+}
+
+fn find_archetype_by_entity_id(a: &Archetypes, entity_id: u32) -> String {
+    let mut output = String::new();
+
+    let archetype_id = get_archetype_id_by_entity_id(a, entity_id);
+
+    output.push_str(&format!("archetype id:\n"));
+    if let Some(id) = archetype_id {
+        output.push_str(&format!("{}", id))
+    }
 
     output
 }
@@ -390,7 +398,7 @@ pub fn match_commands(
                 } else if let Some(component_name) = matches.value_of("componentname") {
                     find_archetypes_by_component_name(a, c, component_name)
                 } else if let Ok(entity_id) = matches.value_of_t("entityid") {
-                    find_archetypes_by_entity_id(a, entity_id)
+                    find_archetype_by_entity_id(a, entity_id)
                 } else {
                     // should never be hit as clap checks this
                     String::from("this line should not be hittable")
