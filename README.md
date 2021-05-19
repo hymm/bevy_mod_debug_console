@@ -30,7 +30,7 @@ Add to you `Cargo.toml` file:
 ```toml
 [dependencies]
 bevy = "0.5"
-bevy_mode_debug_console = "0.0.1"
+bevy_mod_debug_console = "0.0.1"
 ```
 
 Add Plugin:
