@@ -1,16 +1,23 @@
 use bevy::reflect::TypeRegistry;
-use clap::{App, ArgMatches};
+use clap::{App, ArgMatches, AppSettings};
 
 pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
-    let app = app.subcommand(App::new("reflect").about("get reflection info"));
+    let app = app.subcommand(
+        App::new("reflect")
+            .about("get reflection info")
+            .setting(AppSettings::SubcommandRequiredElseHelp)
+            .subcommand(App::new("list").about("list all reflection types")));
 
     app
 }
 
 pub fn match_commands(matches: &ArgMatches, reflect: &TypeRegistry) -> String {
     match matches.subcommand() {
-        Some(("reflect", _)) => list_reflection(reflect),
-        _ => String::from(""),
+        Some(("reflect", matches)) => match matches.subcommand() {
+            Some(("list", _)) => list_reflection(reflect),
+            _ => String::from("this line should not be able to be run"),
+        },
+        _ => String::from("this line should not be able to be run"),
     }
 }
 
