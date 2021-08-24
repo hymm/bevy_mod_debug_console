@@ -1,12 +1,13 @@
 use bevy::reflect::TypeRegistry;
-use clap::{App, ArgMatches, AppSettings};
+use clap::{App, AppSettings, ArgMatches};
 
 pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
     let app = app.subcommand(
         App::new("reflect")
             .about("get reflection info")
             .setting(AppSettings::SubcommandRequiredElseHelp)
-            .subcommand(App::new("list").about("list all reflection types")));
+            .subcommand(App::new("list").about("list all reflection types")),
+    );
 
     app
 }
@@ -17,7 +18,7 @@ pub fn match_commands(matches: &ArgMatches, reflect: &TypeRegistry) -> String {
             Some(("list", _)) => list_reflection(reflect),
             _ => String::from("this line should not be able to be run"),
         },
-        _ => String::from("this line should not be able to be run"),
+        _ => String::from(""),
     }
 }
 
@@ -26,9 +27,9 @@ fn list_reflection(reflect: &TypeRegistry) -> String {
 
     let type_registry = reflect.read();
 
-    type_registry
-        .iter()
-        .for_each(|type_registration| output.push_str(&format!("{}\n", type_registration.short_name())));
+    type_registry.iter().for_each(|type_registration| {
+        output.push_str(&format!("{}\n", type_registration.short_name()))
+    });
 
     output
 }
