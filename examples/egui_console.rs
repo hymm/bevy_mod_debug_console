@@ -1,3 +1,5 @@
+// pausing game loop does not work with egui_console
+
 use bevy::prelude::*;
 use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities},

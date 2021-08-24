@@ -38,6 +38,7 @@ pub fn match_commands(
 fn build_app_commands(app: App) -> App {
     let app = app
         .subcommand(App::new("resume").about("resume running game"))
+        .subcommand(App::new("pause").about("pause game tick"))
         .subcommand(App::new("quit").about("quit game"));
 
     app
@@ -49,6 +50,10 @@ fn match_app_commands(matches: &ArgMatches, mut pause: &mut Pause) -> String {
         Some(("resume", _)) => {
             pause.0 = false;
             output.push_str("...resuming game.");
+        }
+        Some(("pause", _)) => {
+            pause.0 = true;
+            output.push_str("pausing game...");
         }
         Some(("quit", _)) => exit(0),
         _ => {}
@@ -70,7 +75,7 @@ pub fn pause(
     if pause.0 {
         ShouldRun::YesAndCheckAgain
     } else {
-        ShouldRun::No
+        ShouldRun::Yes
     }
 }
 

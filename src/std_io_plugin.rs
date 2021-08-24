@@ -1,4 +1,4 @@
-use crate::app::{build_commands, input_pause, match_commands, EnteringConsole, Pause};
+use crate::app::{build_commands, input_pause, match_commands, pause, EnteringConsole, Pause};
 use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities},
     prelude::*,
@@ -66,7 +66,7 @@ impl Plugin for ConsoleDebugPlugin {
         app.insert_resource(Pause(false))
             .insert_resource(EnteringConsole(false))
             .add_startup_system(spawn_io_thread.system())
-            .add_system(parse_input.system())
+            .add_system(parse_input.system().with_run_criteria(pause.system()))
             .add_system(input_pause.system());
     }
 }
