@@ -62,7 +62,7 @@ fn spawn_io_thread(mut commands: Commands, thread_pool: Res<AsyncComputeTaskPool
 
 pub struct ConsoleDebugPlugin;
 impl Plugin for ConsoleDebugPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(Pause(false))
             .insert_resource(EnteringConsole(false))
             .add_startup_system(spawn_io_thread.system())

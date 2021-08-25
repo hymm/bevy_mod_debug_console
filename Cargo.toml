@@ -13,18 +13,14 @@ repository = "https://github.com/hymm/bevy_mod_debug_console"
 documentation = "https://docs.rs/bevy_mod_debug_console"
 
 [dependencies]
-bevy = {version = "0.5", default-features = false}
+bevy = { git = "https://github.com/bevyengine/bevy", branch = "main", default-features = false }
 clap = "3.0.0-beta.2"
 crossbeam = "0.8"
 
 [dev-dependencies]
-bevy = "0.5"
-bevy_console = "0.2.0"
+bevy = { git = "https://github.com/bevyengine/bevy", branch = "main" }
+# bevy_console = "0.2.0"
 
 [[example]]
 name="example"
 path="examples/example.rs"
-
-[[example]]
-name="egui_console"
-path="examples/egui_console.rs"
