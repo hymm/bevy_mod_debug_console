@@ -5,8 +5,11 @@ use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities},
     reflect::TypeRegistry,
 };
-use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin, PrintConsoleLine};
+use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin, PrintConsoleLine, FromValue};
 use bevy_mod_debug_console::{build_commands, match_commands, Pause};
+
+#[derive(Component)]
+struct Thing(String);
 
 fn debug_console(
     mut console_events: EventReader<ConsoleCommandEntered>,
@@ -22,8 +25,12 @@ fn debug_console(
         let console_app = build_commands(app_name);
         let mut args = vec![app_name];
         args.push(&event.command);
-        let split = event.args.split_whitespace();
-        args.append(&mut split.collect());
+        
+        let split: Vec<String> = event.args.iter().filter_map(|x| 
+            String::from_value(x, 0).ok()
+        ).collect();
+        args.append(&mut split.iter().map(|s| s.as_ref()).collect());
+
         let matches_result = console_app.try_get_matches_from(args);
 
         if let Err(e) = matches_result {
@@ -37,8 +44,14 @@ fn debug_console(
     }
 }
 
+fn setup(mut commands: Commands) {
+    // Adds some Entities to test out `entities list` command
+    commands.spawn().insert(Thing("Entity 1".to_string()));
+    commands.spawn().insert(Thing("Entity 2".to_string()));
+}
+
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(ConsoleConfiguration {
             // override config here
@@ -46,6 +59,7 @@ fn main() {
         })
         .add_plugin(ConsolePlugin)
         .insert_resource(Pause(false))
-        .add_system(debug_console.system())
+        .add_startup_system(setup)
+        .add_system(debug_console)
         .run();
 }
