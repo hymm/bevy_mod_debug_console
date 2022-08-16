@@ -1,11 +1,14 @@
 // pausing game loop does not work with egui_console
+// press the GRAVE key to open the console
 
 use bevy::prelude::*;
 use bevy::{
     ecs::{archetype::Archetypes, component::Components, entity::Entities},
     reflect::TypeRegistry,
 };
-use bevy_console::{ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin, PrintConsoleLine, FromValue};
+use bevy_console::{
+    ConsoleCommandEntered, ConsoleConfiguration, ConsolePlugin, FromValue, PrintConsoleLine,
+};
 use bevy_mod_debug_console::{build_commands, match_commands, Pause};
 
 #[derive(Component)]
@@ -25,10 +28,12 @@ fn debug_console(
         let console_app = build_commands(app_name);
         let mut args = vec![app_name];
         args.push(&event.command);
-        
-        let split: Vec<String> = event.args.iter().filter_map(|x| 
-            String::from_value(x, 0).ok()
-        ).collect();
+
+        let split: Vec<String> = event
+            .args
+            .iter()
+            .filter_map(|x| String::from_value(x, 0).ok())
+            .collect();
         args.append(&mut split.iter().map(|s| s.as_ref()).collect());
 
         let matches_result = console_app.try_get_matches_from(args);
