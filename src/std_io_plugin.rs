@@ -42,7 +42,8 @@ fn parse_input(
     }
 }
 
-fn spawn_io_thread(mut commands: Commands, thread_pool: Res<AsyncComputeTaskPool>) {
+fn spawn_io_thread(mut commands: Commands) {
+    let thread_pool = AsyncComputeTaskPool::get();
     println!("Bevy Console Debugger.  Type 'help' for list of commands.");
     print!(">>> ");
     io::stdout().flush().unwrap();
@@ -62,11 +63,11 @@ fn spawn_io_thread(mut commands: Commands, thread_pool: Res<AsyncComputeTaskPool
 
 pub struct ConsoleDebugPlugin;
 impl Plugin for ConsoleDebugPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(Pause(false))
             .insert_resource(EnteringConsole(false))
-            .add_startup_system(spawn_io_thread.system())
-            .add_system(parse_input.system().with_run_criteria(pause.system()))
-            .add_system(input_pause.system());
+            .add_startup_system(spawn_io_thread)
+            .add_system(parse_input.with_run_criteria(pause))
+            .add_system(input_pause);
     }
 }

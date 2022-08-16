@@ -4,9 +4,9 @@ use bevy::{
         component::{ComponentId, Components, StorageType},
         entity::{Entities, Entity},
     },
-    reflect::TypeRegistration,
+    utils::get_short_name,
 };
-use clap::{App, AppSettings, ArgGroup, ArgMatches};
+use clap::{App, AppSettings, ArgGroup, ArgMatches, arg};
 
 pub fn list_resources(archetypes: &Archetypes, components: &Components) -> String {
     let mut output = String::new();
@@ -18,8 +18,8 @@ pub fn list_resources(archetypes: &Archetypes, components: &Components) -> Strin
         // get_short_name removes the path information
         // i.e. `bevy_audio::audio::Audio` -> `Audio`
         // if you want to see the path info replace
-        // `TypeRegistration::get_short_name` with `String::from`
-        .map(|info| TypeRegistration::get_short_name(info.name()))
+        // `get_short_name` with `String::from`
+        .map(|info| get_short_name(info.name()))
         .collect();
 
     // sort list alphebetically
@@ -41,7 +41,7 @@ fn get_components_by_name(
     for id in 1..components.len() {
         if let Some(info) = components.get_info(ComponentId::new(id)) {
             if short {
-                names.push((id, TypeRegistration::get_short_name(info.name())));
+                names.push((id, get_short_name(info.name())));
             } else {
                 names.push((id, String::from(info.name())));
             }
@@ -75,9 +75,13 @@ fn list_components(c: &Components, short: bool, filter: Option<&str>) -> String 
 fn list_entities(e: &Entities) -> String {
     let mut output = String::new();
     output.push_str(&format!("[entity index] [archetype id]\n"));
-    e.meta.iter().enumerate().for_each(|(id, meta)| {
-        output.push_str(&format!("{} {}\n", id, meta.location.archetype_id.index()));
-    });
+    for id in 0..e.len() {
+        if let Some(entity) = e.resolve_from_id(id) {
+            if let Some(location) = e.get(entity) {
+                output.push_str(&format!("{} {}\n", id, location.archetype_id.index()));
+            }
+        }
+    }
 
     output
 }
@@ -246,7 +250,7 @@ fn print_archetype(a: &Archetypes, c: &Components, archetype_id: ArchetypeId) ->
             .table_components()
             .iter()
             .map(|id| (id.index(), c.get_info(*id).unwrap()))
-            .map(|(id, info)| (id, TypeRegistration::get_short_name(info.name())))
+            .map(|(id, info)| (id, get_short_name(info.name())))
             .for_each(|(id, name)| output.push_str(&format!("{} {}, ", id, name)));
         output.push_str("\n");
 
@@ -258,7 +262,7 @@ fn print_archetype(a: &Archetypes, c: &Components, archetype_id: ArchetypeId) ->
             .sparse_set_components()
             .iter()
             .map(|id| (id.index(), c.get_info(*id).unwrap()))
-            .map(|(id, info)| (id, TypeRegistration::get_short_name(info.name())))
+            .map(|(id, info)| (id, get_short_name(info.name())))
             .for_each(|(id, name)| output.push_str(&format!("{} {}, ", id, name)));
         output.push_str(&format!("\n"));
     } else {
@@ -314,7 +318,7 @@ pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
                 )
                 .subcommand(App::new("info")
                     .about("get info of one archetype")
-                    .arg("--id [Id] 'id to get'")
+                    .arg(arg!(--id <Id> "id to get"))
                     .group(ArgGroup::new("search params")
                         .args(&["id"])
                         .required(true)
@@ -322,9 +326,11 @@ pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
                 )
                 .subcommand(App::new("find")
                     .about("find a archetype")
-                    .arg("--componentid   [ComponentId]   'find types that have components with ComponentId'")
-                    .arg("--componentname [ComponentName] 'find types that have components with ComponentName'")
-                    .arg("--entityid      [EntityId]      'find types that have entities with EntityId")
+                    .args([
+                        arg!(--componentid <ComponentId> "find types that have components with ComponentId"),
+                        arg!(--componentname <ComponentName> "find types that have components with ComponentName"),
+                        arg!(--entityid <EntityId> "find types that have entities with EntityId")
+                    ])
                     .group(ArgGroup::new("search params")
                         .args(&["componentid", "componentname", "entityid"])
                         .required(true)
@@ -338,13 +344,17 @@ pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(App::new("list")
                     .about("list all components")
-                    .arg("-f, --filter [Filter] 'filter list'")
-                    .arg("-l, --long 'display long name'"),
+                    .args([
+                        arg!(-f --filter [Filter] "filter list"),
+                        arg!(-l --long "display long name")
+                    ])
                 )
                 .subcommand(App::new("info")
                     .about("get info of one component")
-                    .arg("--id   [Id]   'id to get'")
-                    .arg("--name [Name] 'name to get'")
+                    .args([
+                        arg!(--id <Id> "id to get"),
+                        arg!(--name <Name> "name to get")
+                    ])
                     .group(ArgGroup::new("search params")
                         .args(&["id", "name"])
                         .required(true)
@@ -362,8 +372,10 @@ pub fn build_commands<'a>(app: App<'a>) -> App<'a> {
                 .subcommand(
                     App::new("find")
                         .about("find entity matching search params")
-                        .arg("--componentid   [ComponentId]   'find types that have components with ComponentId'")
-                        .arg("--componentname [ComponentName] 'find types that have components with ComponentName'")
+                        .args([
+                            arg!(--componentid <ComponentId> "find types that have components with ComponentId"),
+                            arg!(--componentname <ComponentName> "find types that have components with ComponentName")
+                        ])
                         .group(ArgGroup::new("search params")
                             .args(&["componentid", "componentname"])
                             .required(true)
